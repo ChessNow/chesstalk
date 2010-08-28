@@ -1,0 +1,46 @@
+chesstalk has a few different operating modes to speak and collect chess moves, through festival.
+
+the most basic mode is to collect chess moves from stdin and to speak to the user after a certain interval to request another move and speak a status update.
+
+the output is a .pgn file.
+
+there is also an undo move feature.
+
+Run DEBUG=3 ./chesstalk
+to have additional verbose statements such as memory tree additinos, deletions, and undo operations displayed to stdout.
+
+--
+
+Commands to use in the program.
+
+Type 'help' to get a brief overview.
+
+The basic operation is to start typing your moves as you play them on a real gaming board or on some other chess interface.
+
+As you do so, the move you type will be announced through festival.
+
+Use 'show' to see a current list of moves, that have been played.
+
+Use 'save' to output that list of in-memory moves to an output.pgn file.
+
+Quick tip for xboard viewing: xboard -ncp -boardSize medium -lgf ./output.pgn
+
+Use 'quit' to exit gracefully, when you're done.
+
+--
+
+Compiling and installing
+
+Usually you run commands like this to get started:
+
+# utilize configure.ac and Makefile.am files to generate a configure script
+# (stay in the base directory with README and configure.ac to run this)
+
+autoreconf --force --install
+
+mkdir compile
+cd compile
+../configure --prefix=$HOME/bin/chesstalk
+make 
+make install
+
