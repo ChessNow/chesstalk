@@ -62,8 +62,9 @@ int blocking_speak_festival(char *str) {
 #define PAWN_MOVE 0x1
 #define PIECE_MOVE 0x2
 #define COORDINATE_MOVE 0x4
-#define INVALID 0x8
-#define RESIGN 0x10
+#define CASTLE 0x8
+#define INVALID 0x10
+#define RESIGN 0x20
 
 char *piece_chars = "nbrqk";
 
@@ -87,6 +88,20 @@ int validate_input_move(char *str, int verbose) {
   if (verbose) {
     printf("%s: len=%d\n", __FUNCTION__, len);
   }
+
+  if ((len==3 || len==5) && str[0]=='O') {
+
+    if (str[1]=='-' && str[2] == 'O') {
+
+      if (str[3] == 0) return CASTLE;
+
+      if (len==5 && str[3]=='-' && str[4]=='O' && str[5]==0) return CASTLE;
+
+    }
+
+  }
+
+  else
 
   if (len==4) {
 
@@ -413,11 +428,16 @@ int main(int argc, char *argv[]) {
 
       valid_move = validate_input_move(line, debug>2);
 
-      movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
+      if (valid_move != INVALID) {
+
+	movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
+
+      }
 
       switch (valid_move) {
       case INVALID: blocking_speak_festival(invalid_move); break;
       case RESIGN: blocking_speak_festival(game_complete); game_status = GAMEOVER; break;
+      case CASTLE: blocking_speak_festival("Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case PIECE_MOVE: blocking_speak_festival(reformulate(line)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case COORDINATE_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case PAWN_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
