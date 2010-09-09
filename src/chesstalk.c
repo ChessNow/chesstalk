@@ -169,7 +169,7 @@ int show_help() {
 
   printf("help   this help menu.\n");
   printf("show   list out currently played moves.\n");
-  printf("save   file way the move list as output.pgn.\n");
+  printf("save   file away the move list as output.pgn.\n");
   printf("quit   leave the program.\n");
 
   printf("\n");
@@ -220,7 +220,7 @@ struct move_node {
 
   int game_status;
 
-  char move[5];
+  char move[6];
 
   struct move_node *previous, *next;
 

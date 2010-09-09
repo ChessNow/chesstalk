@@ -7,7 +7,7 @@ the output is a .pgn file.
 there is also an undo move feature.
 
 Run DEBUG=3 ./chesstalk
-to have additional verbose statements such as memory tree additinos, deletions, and undo operations displayed to stdout.
+to have additional verbose statements such as memory tree additions, deletions, and undo operations displayed to stdout.
 
 --
 
