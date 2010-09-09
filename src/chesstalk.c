@@ -62,9 +62,10 @@ int blocking_speak_festival(char *str) {
 #define PAWN_MOVE 0x1
 #define PIECE_MOVE 0x2
 #define COORDINATE_MOVE 0x4
-#define CASTLE 0x8
-#define INVALID 0x10
-#define RESIGN 0x20
+#define CASTLE_KS 0x8
+#define CASTLE_QS 0x10
+#define INVALID 0x20
+#define RESIGN 0x40
 
 char *piece_chars = "nbrqk";
 
@@ -93,9 +94,9 @@ int validate_input_move(char *str, int verbose) {
 
     if (str[1]=='-' && str[2] == 'O') {
 
-      if (str[3] == 0) return CASTLE;
+      if (str[3] == 0) return CASTLE_KS;
 
-      if (len==5 && str[3]=='-' && str[4]=='O' && str[5]==0) return CASTLE;
+      if (len==5 && str[3]=='-' && str[4]=='O' && str[5]==0) return CASTLE_QS;
 
     }
 
@@ -437,14 +438,15 @@ int main(int argc, char *argv[]) {
       switch (valid_move) {
       case INVALID: blocking_speak_festival(invalid_move); break;
       case RESIGN: blocking_speak_festival(game_complete); game_status = GAMEOVER; break;
-      case CASTLE: blocking_speak_festival("Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case CASTLE_KS: blocking_speak_festival("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case CASTLE_QS: blocking_speak_festival("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case PIECE_MOVE: blocking_speak_festival(reformulate(line)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case COORDINATE_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case PAWN_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       default: blocking_speak_festival("What did you say?"); break;
       }
 
-      if (valid_move==PIECE_MOVE || valid_move==PAWN_MOVE) {
+      if (valid_move!=INVALID && valid_move != RESIGN) {
 	if (game_status==PLAY_WHITE) {
 	  move_number++;
 	}
