@@ -67,7 +67,7 @@ int blocking_speak_festival(char *str) {
 #define INVALID 0x20
 #define RESIGN 0x40
 
-char *piece_chars = "nbrqk";
+char *piece_chars = "NBRQK";
 
 int validate_input_move(char *str, int verbose) {
 
@@ -173,7 +173,7 @@ int show_help() {
   printf("quit   leave the program.\n");
 
   printf("\n");
-  printf("valid moves are in the form e4 nf3 e7e8 and use 0-1 or 1-0 to terminate the game.\n");
+  printf("valid moves are in the form e4 Nf3 e7e8 and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
 
   return 0;
 
@@ -186,11 +186,11 @@ char *piece_name(char c) {
   char *s;
 
   switch (c) {
-  case 'n': s=piece_names[0]; break;
-  case 'b': s=piece_names[1]; break;
-  case 'k': s=piece_names[2]; break;
-  case 'r': s=piece_names[3]; break;
-  case 'q': s=piece_names[4]; break;
+  case 'N': s=piece_names[0]; break;
+  case 'B': s=piece_names[1]; break;
+  case 'K': s=piece_names[2]; break;
+  case 'R': s=piece_names[3]; break;
+  case 'Q': s=piece_names[4]; break;
   default: s=piece_names[5]; break;
   }
 
