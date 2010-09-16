@@ -36,11 +36,21 @@ Usually you run commands like this to get started:
 # utilize configure.ac and Makefile.am files to generate a configure script
 # (stay in the base directory with README and configure.ac to run this)
 
+libtoolize
 autoreconf --force --install
 
-mkdir compile
-cd compile
+mkdir decimate
+cd decimate
 ../configure --prefix=$HOME/bin/chesstalk
 make 
 make install
+
+
+There is also an ajaxtime module which takes move events from the main chesstalk routines, and binds these to specific times
+to be made available through a file or shared memory location to a tcp or other server that will feed the web page browser.
+
+To test it try the src/run-ajaxtime-module.sh script for that, but do so from the directory containing the compiled chesstalk binary.
+
+It is the responsibility of the given modules to implement and contain this added time functionality. Perhaps in the future this type
+of module will be even more remote, separated through a more generic zeromq interface.
 

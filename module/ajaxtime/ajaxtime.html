@@ -1,0 +1,201 @@
+<HEAD>
+<TITLE>ajaxtime</TITLE>
+
+<script type="text/javascript" src="../js/jquery-1.4.2.min.js"></script>
+
+<script type="text/javascript" src="../js/jquery.ba-dotimeout.min.js"></script>
+
+<!-- // http://benalman.com/projects/jquery-dotimeout-plugin/ -->
+
+<script type="text/javascript">
+
+<!--
+
+$(document).ready(function(){
+
+var former_white_time = '00:00', former_black_time = '00:00';
+
+var former_last_move = '';
+
+var interval = 200;
+
+var upkeep_frames = 2 * (1000 / interval);
+
+var white_count = upkeep_frames, black_count = upkeep_frames;
+
+var refreshid;
+
+var elem = $('#polling_loop');
+
+function fillout_block(json) {
+
+   var iblock = document.getElementById("info_block");
+
+   var workspan, wcap, existingchild;
+
+
+function activate(id,target) {
+
+   wcap = document.createTextNode(target);
+
+   workspan = document.getElementById(id);
+
+   existingchild = workspan.firstChild;
+
+   workspan.replaceChild(wcap,existingchild);
+
+   }
+
+
+   if (json.w_time != former_white_time) {
+
+   activate("w", "W");
+
+   activate("w_time", json.w_time);
+
+   former_white_time = json.w_time;
+
+   white_count = upkeep_frames;
+
+   }
+
+   else {
+
+   if (white_count > 0) { white_count--; }
+
+   if (!white_count) activate("w", "w");
+
+   }
+
+
+   if (json.b_time != former_black_time) {
+
+   activate("b", "B");
+
+   activate("b_time", json.b_time);
+
+   former_black_time = json.b_time;
+
+   black_count = upkeep_frames;
+
+   }
+
+   else {
+
+   if (black_count > 0) { black_count--; }
+
+   if (!black_count) activate("b", "b");
+
+   }
+
+
+   if (former_last_move != json.last_move) {
+
+   activate("last_move", json.last_move);
+
+   former_last_move = json.last_move;
+
+   }
+
+}
+
+function update_time () {
+
+$.ajax({
+    url: 'ajaxtime.json',
+    type: 'GET',
+    dataType: 'json',
+    timeout: 1000,
+    error: function(){
+        alert('Error loading XML document');
+    },
+    success: function(json){
+        // do something with json
+
+   fillout_block(json);
+
+   }
+
+});
+
+}
+
+elem.find('a.start').click(function(){
+
+   var i = 0;
+
+   elem.doTimeout('loop', interval, function() {
+
+   ++i;
+
+   var wcap, workspan, existingchild;
+
+   wcap = document.createTextNode(i);
+
+   workspan = document.getElementById("counter");
+
+   existingchild = workspan.firstChild;
+
+   workspan.replaceChild(wcap,existingchild);
+
+   update_time();
+
+   return true;
+
+   });
+
+});
+
+$("#force").click(function() {
+   
+   elem.doTimeout('loop', true);
+
+});
+
+$("#stop").click(function() {
+
+   elem.doTimeout('loop');
+
+   var empty_json = { "w_time": "00:00", "b_time": "00:00", "last_move": "last" };
+
+   fillout_block(empty_json);
+
+});
+
+elem.find('a.start').click();
+
+});
+
+//-->
+      
+</script>
+
+</HEAD>
+
+<HTML>
+
+<font size=28 face="Courier New, monospace">
+
+<p id="info_block">
+<span id="w">w</span>
+<span id="w_time">00:00</span>
+<span id="b">b</span>
+<span id="b_time">00:00</span>
+
+<span id="last_move">last</span>
+</p>
+
+</font>
+
+<div id="polling_loop">
+
+  <a href="#" class="start">(Re)start</a>
+
+<button id="force">Force</button>
+<button id="stop">Stop</button>
+
+<p>Polling loop counter: <span id="counter">???</span></p>
+
+</div>
+
+</HTML>

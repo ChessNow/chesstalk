@@ -19,6 +19,9 @@ AM_INIT_AUTOMAKE
 
 AC_CONFIG_HEADERS(config.h)
 
+AC_CONFIG_MACRO_DIR([m4])
+AC_PROG_LIBTOOL
+
 AC_PROG_CC
 AC_PROG_MAKE_SET
 
@@ -28,7 +31,9 @@ AC_CHECK_HEADER(stdio.h,[AC_DEFINE(HAVE_STDIO_H)],[AC_MSG_ERROR([Sorry, can't do
 
 AC_CONFIG_SRCDIR([src/chesstalk.c])
 
-AC_CHECK_LIB([dl], [dlopen])
+#AC_CHECK_LIB([dl], [dlopen])
+#AC_CHECK_LIB([pthread], [pthread_join])
+#AC_SEARCH_LIBS([dlopen], [dl])
 
 AC_PATH_X
 AC_HEADER_STDC
@@ -44,12 +49,18 @@ AC_FUNC_VPRINTF
 
 AC_CHECK_HEADERS(stdio.h)
 AC_CHECK_HEADERS(malloc.h)
+AC_CHECK_HEADERS(stdlib.h)
+AC_CHECK_HEADERS(string.h)
 
+AC_CHECK_FUNCS(strchr.h)
 AC_CHECK_FUNCS(strcpy)
-AC_CHECK_FUNCS(strchr)
 AC_CHECK_FUNCS(strtol)
 
-AC_CONFIG_FILES([src/Makefile Makefile])
+#AC_CHECK_HEADERS(pthread.h)
+
+AC_CHECK_FUNCS(getenv)
+
+AC_CONFIG_FILES([src/Makefile Makefile module/Makefile module/ajaxtime/Makefile])
 
 AC_OUTPUT
 

@@ -13,6 +13,8 @@
 
 #include "output_module.h"
 
+#include <dlfcn.h>
+
 // festival_client --async --ttw --aucommand 'aplay $FILE'
 
 int blocking_speak_festival(char *str) {
@@ -377,6 +379,175 @@ struct move_node *append_move(struct move_node *movelist, int valid_move, int ga
 
 }
 
+#include "chesstalk_module.h"
+
+struct module_list {
+
+  void *handle;
+
+  struct chesstalk_module *m;
+  
+  struct module_list *next, *prev;
+
+};
+
+// prepends a new module otherwise returns prior list on failure.
+
+struct module_list *load_modules(struct module_list *current_list, char *module_names) {
+
+  struct module_list *p;
+
+  struct chesstalk_module *m;
+
+  char *filename;
+
+  int (*module_entry)(struct chesstalk_module *m);
+
+  void *handle;
+
+  int retval;
+
+  char *error;
+
+#define free_leave() { free(p); free(m); return current_list; }
+
+  assert(module_names!=NULL);
+
+  p = malloc(sizeof(struct module_list));
+  if (p==NULL) return current_list;
+
+  m = malloc(sizeof(struct chesstalk_module));
+  if (m==NULL) {
+    free(p);
+    return current_list;
+  }
+
+  filename = module_names;
+
+  handle = dlopen(filename, RTLD_LAZY);
+  if (handle==NULL) {
+    printf("%s: dlopen failure for %s.\n", __FUNCTION__, filename);
+    free_leave();
+  }
+
+  dlerror();
+
+  module_entry = dlsym(handle, "module_entry");
+  if (module_entry==NULL) {
+    error=dlerror();
+    if (error!=NULL) { printf("%s: Trouble with call to dlsym. error=%s\n", __FUNCTION__, error); }
+    dlclose(handle);
+    free_leave();
+  }
+
+  retval = module_entry(m);
+  if (retval==-1) {
+    printf("%s: Problem calling module_entry for %s.\n", __FUNCTION__, filename);
+    dlclose(handle);
+    free_leave();
+  }
+
+  p->handle = handle;
+
+  p->m = m;
+
+  p->next = current_list;
+  p->prev = NULL;
+
+  current_list = p;
+
+#undef free_leave
+
+  return current_list;
+
+}
+
+int unload_modules(struct module_list *p) {
+
+  int count = 0, success = 0;
+
+  int retval;
+
+  for ( ; p != NULL; p = p->next, count++) {
+
+    if (p->handle!=NULL) {
+
+      struct chesstalk_module *m = p->m;
+
+      if (m!=NULL && m->module_shutdown!=NULL) {
+
+	retval = m->module_shutdown();
+	if (retval==-1) {
+	  printf("%s: Warning. Unclean shutdown for module m=%p.\n", __FUNCTION__, m);
+	}
+
+      }
+      
+      if (0 != dlclose(p->handle)) {
+
+	printf("%s: Trouble closing handle=%p.\n", __FUNCTION__, p->handle);
+
+      }
+
+      else success++;
+
+    }
+
+  }
+
+  if (p!=NULL) return -1;
+
+  return (count - success);
+
+}
+
+int modules_work(struct module_list *p, int move_number, char *move_string, int white_move) {
+
+  struct chesstalk_module *m;
+
+  int retval;
+
+  for ( ; p != NULL; p = p->next) {
+
+    m = p->m;
+
+    if (m != NULL && m->move_submission!=NULL) {
+      retval = m->move_submission(move_number, move_string, white_move);
+      if (retval!=0) {
+	printf("%s: Trouble with call to m->move_submission=%p.\n", __FUNCTION__, m->move_submission);
+      }
+    }
+
+  }
+
+  return 0;
+
+}
+
+int show_modules(struct module_list *modules) {
+
+  struct module_list *p = modules;
+
+  int count;
+
+  for ( count = 0; p != NULL; p = p->next, count++) {
+
+    if (p!=NULL) {
+      struct chesstalk_module *m = p->m;
+      printf("[%d]: m=%p\n", count, m);
+      if (m!=NULL) {
+	printf("[%d]: m->move_submission=%p\n", count, m->move_submission);
+	printf("[%d]: m->module_shutdown=%p\n", count, m->module_shutdown);
+      }
+
+    }
+
+  }
+
+  return 0;
+
+}
+
 int main(int argc, char *argv[]) {
 
   char *line = NULL;
@@ -400,6 +571,12 @@ int main(int argc, char *argv[]) {
 
   struct move_node *movelist = NULL;
 
+  char *module_names = getenv("CHESSTALK_MODULE");
+
+  struct module_list *modules = module_names != NULL ? load_modules(NULL, module_names) : NULL;
+
+  int retval;
+
   blocking_speak_festival(start_string);
 
   printf("game_status=%s\n", game_status_str(game_status));
@@ -409,6 +586,9 @@ int main(int argc, char *argv[]) {
     printf("[%d%s]: ", move_number, game_status==PLAY_WHITE ? "" : "...");
 
     read_characters = getline(&line, &len, stdin);
+
+    if (read_characters == -1) { putchar('\r'); continue; }
+
   if (line!=NULL) {
 
     if (len>0) {
@@ -422,6 +602,7 @@ int main(int argc, char *argv[]) {
 
 	if (!strncmp(line, "help", 4)) { show_help(); continue; }
 	if (!strncmp(line, "show", 4)) { show_moves(movelist); continue; }
+	if (!strncmp(line, "modules", 7)) { show_modules(modules); continue; }
 	if (!strncmp(line, "save", 4)) { save(movelist); continue; }
 	if (!strncmp(line, "quit", 4)) { break; }
 
@@ -432,6 +613,8 @@ int main(int argc, char *argv[]) {
       if (valid_move != INVALID) {
 
 	movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
+
+	if (modules!=NULL) { modules_work(modules, move_number, line, game_status & PLAY_WHITE); }
 
       }
 
@@ -447,6 +630,7 @@ int main(int argc, char *argv[]) {
       }
 
       if (valid_move!=INVALID && valid_move != RESIGN) {
+
 	if (game_status==PLAY_WHITE) {
 	  move_number++;
 	}
@@ -459,6 +643,13 @@ int main(int argc, char *argv[]) {
   printf("game_status=%s\n", game_status_str(game_status));
 
   } while (game_status != GAMEOVER);
+
+  if (modules!=NULL) {
+    retval = unload_modules(modules);
+    if (retval==-1) {
+      printf("%s: Trouble unloading one or more modules.\n", __FUNCTION__);
+    }
+  }
 
   if (line) free(line);
 

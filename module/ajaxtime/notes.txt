@@ -1,0 +1,13 @@
+Place ajaxtime.html on your nginx webserver.
+
+Run chesstalk with the ajaxtime module so it updates that string to file.
+(or shared memory location, but then you need a fastcgi application)
+
+see the ajaxtime.html file and make sure you have the relevant jquery javascript file on your webserver.
+
+which also needs the doTimeout javascript addition too, for jQuery.
+
+There is sort of a heart beat indicator that keeps the player that has the clock counting down, in an upper case letter. (Either white or black)
+
+The last move played is shown after the white and black time remaining.
+
