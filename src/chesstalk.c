@@ -21,7 +21,7 @@ int blocking_speak_festival(char *str) {
 
   FILE *p;
 
-  char *command = "festival_client --async --ttw --aucommand 'aplay --quiet $FILE'";
+  char *command = "festival_client --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 3 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
 
   int written;
 
@@ -47,7 +47,7 @@ int blocking_speak_festival(char *str) {
   }
 
   if (written != strlen(str)+1) {
-    printf("%s: Wrote %d characters of text. Expected %ld.\n", __FUNCTION__, written, strlen(str)+1);
+    printf("%s: Wrote %d characters of text. Expected %lu.\n", __FUNCTION__, written, strlen(str)+1);
   }
 
   exit_retval = pclose(p);
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]) {
 
       int valid_move;
 
-      if (debug) printf("%s: Got len=%ld for line %s.\n", __FUNCTION__, len, line);
+      if (debug) printf("%s: Got len=%lu for line %s.\n", __FUNCTION__, len, line);
       { char *p; for (p=line; *p; p++) if (*p == '\n') *p = 0; }
 
       if (len>=4) {

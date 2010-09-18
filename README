@@ -54,3 +54,5 @@ To test it try the src/run-ajaxtime-module.sh script for that, but do so from th
 It is the responsibility of the given modules to implement and contain this added time functionality. Perhaps in the future this type
 of module will be even more remote, separated through a more generic zeromq interface.
 
+
+You also need the sox audio converter installed unless you tweak one of the festival aplay lines in the sources.
