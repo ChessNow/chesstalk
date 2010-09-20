@@ -301,6 +301,8 @@ int module_shutdown() {
   pthread_join(w.idle_thread_writer, NULL);
 
   pthread_mutex_destroy(&w.update_lock);
+  pthread_mutex_destroy(&w.submission_lock);
+  pthread_mutex_destroy(&w.threadstate_lock);
 
   printf("%s: w.fd=%d\n", __FUNCTION__, w.fd);
 
