@@ -1,0 +1,31 @@
+
+body {
+background-color: #000000;
+margin: 20px auto auto 50px;
+font-size: 0.9em; 
+font-family: "courier new, monospace";
+}
+
+#info_block {
+color: #FFFFFF;
+background-color: #000000;
+border-top: 2px dotted #FFFFFF;
+border-right: 2px dotted #FFFFFF;
+border-bottom: 2px dotted #FFFFFF;
+margin: 5px 5px auto auto;
+}
+
+#polling_loop {
+border-top: 1px solid #efefef;
+border-left: 1px solid #efefef;
+border-bottom: 1px solid #ccc;
+padding: 1em 1em 1em 1.5em;
+background-color: #777777;
+margin: 10px 10px auto auto;
+}
+
+a:link, a:active, a:visited, a:hover {
+color: #FFFFFF; 
+text-decoration: none;
+}
+
