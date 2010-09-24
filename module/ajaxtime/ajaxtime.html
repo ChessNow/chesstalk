@@ -17,7 +17,13 @@ var former_white_time = '00:00', former_black_time = '00:00';
 
 var former_last_move = '';
 
-var interval = 200;
+var ideal_interval = 200;
+
+var maximum_interval = 5000;
+
+var interval = ideal_interval;
+
+var json_failure_count = 0;
 
 var upkeep_frames = 2 * (1000 / interval);
 
@@ -107,10 +113,21 @@ $.ajax({
     dataType: 'json',
     timeout: 1000,
     error: function(){
-        alert('Error loading XML document');
+
+     if (interval < max_interval) {
+       interval *= 2;
+		    json_failure_count++;
+       }
+       else {
+        alert('Error loading XML document ' + json_failure_count);
+       }
     },
     success: function(json){
         // do something with json
+
+		    if (interval > ideal_interval) {
+                      interval *= 0.5;
+                     }
 
    fillout_block(json);
 
@@ -201,6 +218,8 @@ elem.find('a.start').click();
 <button id="stop">Stop</button>
 
 <p>Polling loop counter: <span id="counter">???</span></p>
+
+<p>json_failure counter: <span id="failure_count">???</span></p>
 
 </div>
 
