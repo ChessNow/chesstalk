@@ -101,6 +101,13 @@ int write_json_file(char *json_string) {
       return -1;
 
     }
+
+    if (fdatasync(w.fd) != 0) {
+      
+      perror("fdatasync");
+      return -1;
+
+    }
     
 
   }
