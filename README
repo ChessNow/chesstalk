@@ -56,3 +56,7 @@ of module will be even more remote, separated through a more generic zeromq inte
 
 
 You also need the sox audio converter installed unless you tweak one of the festival aplay lines in the sources.
+
+If you have a mobile device you might need a better browser.
+Check for jQuery compatibility here:
+http://jquerymobile.com/gbs/
