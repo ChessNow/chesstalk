@@ -90,23 +90,24 @@ int prolog_prep_festival(char *str) {
 #define COORDINATE_MOVE 0x4
 #define CASTLE_KS 0x8
 #define CASTLE_QS 0x10
-#define INVALID 0x20
-#define RESIGN 0x40
+#define FALLOUT_EXCHANGE 0x20
+#define INVALID 0x40
+#define RESIGN 0x80
 
 char *piece_chars = "NBRQK";
+
+int valid_coordinate(char *cs) {
+
+  assert(cs!=NULL);
+
+  return (cs[0] >= 'a' && cs[0] <= 'h') && 
+    (cs[1] >= '1' && cs[1] <= '8');
+
+}
 
 int validate_input_move(char *str, int verbose) {
 
   int len;
-
-  int valid_coordinate(char *cs) {
-
-    assert(cs!=NULL);
-
-    return (cs[0] >= 'a' && cs[0] <= 'h') && 
-      (cs[1] >= '1' && cs[1] <= '8');
-
-  }
 
   assert(str!=NULL);
 
@@ -130,48 +131,59 @@ int validate_input_move(char *str, int verbose) {
 
   else
 
-  if (len==4) {
+    if (len==4) {
 
-    if (valid_coordinate(str) && valid_coordinate(str+2)) {
+      if (valid_coordinate(str) && valid_coordinate(str+2)) {
 
-      return COORDINATE_MOVE;
+	return COORDINATE_MOVE;
       
-    }
+      }
 
-  }
+      if (str[1] == 'x' && 
+	  ((str[0] >= 'a' && str[0] <= 'f') || (strchr(piece_chars, str[0]) != NULL))) {
+
+	// exchange
+
+	if (valid_coordinate(str+2)) {
+	  return FALLOUT_EXCHANGE;
+	}
+
+      }
+
+    }
   
-  else
+    else
 
-  if (len==3 && strchr(piece_chars, str[0]) != NULL) {
+      if (len==3 && strchr(piece_chars, str[0]) != NULL) {
 
-    // piece move
+	// piece move
 
-    if (valid_coordinate(str+1)) return PIECE_MOVE;
+	if (valid_coordinate(str+1)) return PIECE_MOVE;
 
-  }
+      }
 
-  else
+      else
 
-  if (len==3 && str[1] == '-') {
+	if (len==3 && str[1] == '-') {
+	    
+	  // resignation
 
-    // resignation
+	  if ((str[0] == '0' && str[2] == '1')
+	      || (str[0] == '1' && str[2] == '0')) {
+	    return RESIGN;
+	  }
+      
+	}
 
-    if ((str[0] == '0' && str[2] == '1')
-	|| (str[0] == '1' && str[2] == '0')) {
-      return RESIGN;
-    }
+	else
 
-  }
-
-  else
-
-  if (len==2) {
-
-    // pawn move
-
-    if (valid_coordinate(str)) return PAWN_MOVE;
-
-  }
+	  if (len==2) {
+	      
+	    // pawn move
+	      
+	    if (valid_coordinate(str)) return PAWN_MOVE;
+	      
+	  }
 
   return INVALID;
 
@@ -199,7 +211,7 @@ int show_help() {
   printf("quit   leave the program.\n");
 
   printf("\n");
-  printf("valid moves are in the form e4 Nf3 e7e8 and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
+  printf("valid moves are in the form e4 Nf3 e7e8 cxd4 Nxd4 and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
 
   return 0;
 
@@ -224,17 +236,39 @@ char *piece_name(char c) {
 
 }
 
-char *reformulate(char *line) {
-
-  static char extended_description[20];
+char *piece_reformulate(char *line, char *extended_description) {
 
   assert(line!=NULL);
+
+  assert(valid_coordinate(line+1));
 
   if (strchr(piece_chars, line[0]) != NULL) {
 
     sprintf(extended_description, "%s to %s", piece_name(line[0]), line+1);
 
   }
+
+  return extended_description;
+
+}
+
+char *exchange_reformulate(char *line, char *extended_description) {
+
+  assert(line!=NULL);
+
+  assert((line[0] >= 'a' && line[0] <= 'f') || (strchr(piece_chars, line[0]) != NULL));
+
+  assert(line[1] == 'x');
+
+  assert(valid_coordinate(line+2));
+
+  if (line[0] >= 'a' && line[0] <= 'f') {
+    sprintf(extended_description, "%c exchange with %s", line[0], line+2);
+  }
+  else
+    if (strchr(piece_chars, line[0]) != NULL) {
+      sprintf(extended_description, "%s exchange with %s", piece_name(line[0]), line+2);
+    }
 
   return extended_description;
 
@@ -603,6 +637,8 @@ int main(int argc, char *argv[]) {
 
   int (*block_fest)(char *);
 
+  char extended_description[80];
+
   env_festival_prolog = getenv("FESTIVAL_PROLOG");
 
   block_fest = env_festival_prolog != NULL ? prolog_prep_festival : regular_festival;
@@ -653,8 +689,9 @@ int main(int argc, char *argv[]) {
       case RESIGN: block_fest(game_complete); game_status = GAMEOVER; break;
       case CASTLE_KS: block_fest("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case CASTLE_QS: block_fest("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case PIECE_MOVE: block_fest(reformulate(line)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case PIECE_MOVE: block_fest(piece_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case COORDINATE_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case FALLOUT_EXCHANGE: block_fest(exchange_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       case PAWN_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
       default: block_fest("What did you say?"); break;
       }
