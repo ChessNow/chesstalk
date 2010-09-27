@@ -17,17 +17,19 @@
 
 // festival_client --async --ttw --aucommand 'aplay $FILE'
 
-int blocking_speak_festival(char *str) {
+char *basic_command = "festival_client --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 3 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
+
+char *env_festival_prolog;
+
+int blocking_speak_festival(char *str, char *command) {
 
   FILE *p;
-
-  char *command = "festival_client --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 3 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
 
   int written;
 
   int exit_retval;
 
-  assert(str!=NULL);
+  assert(str!=NULL && command!=NULL);
 
   p = popen(command, "w");
   if (p==NULL) {
@@ -58,6 +60,28 @@ int blocking_speak_festival(char *str) {
   }
 	 
   return 0;
+
+}
+
+int regular_festival(char *str) {
+
+  return blocking_speak_festival(str, basic_command);
+
+}
+
+int prolog_prep_festival(char *str) {
+  
+  char command[2048];
+
+  char *command_template = "festival_client --withlisp --prolog %s --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 3 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
+
+  char *prolog_filename = env_festival_prolog; 
+
+  assert(prolog_filename!=NULL);
+
+  sprintf(command, command_template, prolog_filename);
+
+  return blocking_speak_festival(str, command);
 
 }
 
@@ -577,7 +601,13 @@ int main(int argc, char *argv[]) {
 
   int retval;
 
-  blocking_speak_festival(start_string);
+  int (*block_fest)(char *);
+
+  env_festival_prolog = getenv("FESTIVAL_PROLOG");
+
+  block_fest = env_festival_prolog != NULL ? prolog_prep_festival : regular_festival;
+
+  block_fest(start_string);
 
   printf("game_status=%s\n", game_status_str(game_status));
 
@@ -619,14 +649,14 @@ int main(int argc, char *argv[]) {
       }
 
       switch (valid_move) {
-      case INVALID: blocking_speak_festival(invalid_move); break;
-      case RESIGN: blocking_speak_festival(game_complete); game_status = GAMEOVER; break;
-      case CASTLE_KS: blocking_speak_festival("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case CASTLE_QS: blocking_speak_festival("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case PIECE_MOVE: blocking_speak_festival(reformulate(line)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case COORDINATE_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case PAWN_MOVE: blocking_speak_festival(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      default: blocking_speak_festival("What did you say?"); break;
+      case INVALID: block_fest(invalid_move); break;
+      case RESIGN: block_fest(game_complete); game_status = GAMEOVER; break;
+      case CASTLE_KS: block_fest("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case CASTLE_QS: block_fest("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case PIECE_MOVE: block_fest(reformulate(line)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case COORDINATE_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      case PAWN_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+      default: block_fest("What did you say?"); break;
       }
 
       if (valid_move!=INVALID && valid_move != RESIGN) {

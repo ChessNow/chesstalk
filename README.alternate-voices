@@ -1,0 +1,11 @@
+
+Define a FESTIVAL_PROLOG environment variable pointing to a text file
+containing lisp statements like the following:
+
+(voice_nitech_us_awb_arctic_hts)
+
+But make sure your festival server already has the voices on it before it
+was last started. Use the command (voice.list) in festival for choices.
+
+You can also put in other statements as they will all be sent to the
+server using festival_client before the voice processing takes place.
