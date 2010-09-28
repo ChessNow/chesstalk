@@ -85,109 +85,9 @@ int prolog_prep_festival(char *str) {
 
 }
 
-#define PAWN_MOVE 0x1
-#define PIECE_MOVE 0x2
-#define COORDINATE_MOVE 0x4
-#define CASTLE_KS 0x8
-#define CASTLE_QS 0x10
-#define FALLOUT_EXCHANGE 0x20
-#define INVALID 0x40
-#define RESIGN 0x80
+#include "validate_input_move.h"
 
-char *piece_chars = "NBRQK";
-
-int valid_coordinate(char *cs) {
-
-  assert(cs!=NULL);
-
-  return (cs[0] >= 'a' && cs[0] <= 'h') && 
-    (cs[1] >= '1' && cs[1] <= '8');
-
-}
-
-int validate_input_move(char *str, int verbose) {
-
-  int len;
-
-  assert(str!=NULL);
-
-  len = strlen(str);
-
-  if (verbose) {
-    printf("%s: len=%d\n", __FUNCTION__, len);
-  }
-
-  if ((len==3 || len==5) && str[0]=='O') {
-
-    if (str[1]=='-' && str[2] == 'O') {
-
-      if (str[3] == 0) return CASTLE_KS;
-
-      if (len==5 && str[3]=='-' && str[4]=='O' && str[5]==0) return CASTLE_QS;
-
-    }
-
-  }
-
-  else
-
-    if (len==4) {
-
-      if (valid_coordinate(str) && valid_coordinate(str+2)) {
-
-	return COORDINATE_MOVE;
-      
-      }
-
-      if (str[1] == 'x' && 
-	  ((str[0] >= 'a' && str[0] <= 'f') || (strchr(piece_chars, str[0]) != NULL))) {
-
-	// exchange
-
-	if (valid_coordinate(str+2)) {
-	  return FALLOUT_EXCHANGE;
-	}
-
-      }
-
-    }
-  
-    else
-
-      if (len==3 && strchr(piece_chars, str[0]) != NULL) {
-
-	// piece move
-
-	if (valid_coordinate(str+1)) return PIECE_MOVE;
-
-      }
-
-      else
-
-	if (len==3 && str[1] == '-') {
-	    
-	  // resignation
-
-	  if ((str[0] == '0' && str[2] == '1')
-	      || (str[0] == '1' && str[2] == '0')) {
-	    return RESIGN;
-	  }
-      
-	}
-
-	else
-
-	  if (len==2) {
-	      
-	    // pawn move
-	      
-	    if (valid_coordinate(str)) return PAWN_MOVE;
-	      
-	  }
-
-  return INVALID;
-
-}
+#include "move_spec.h"
 
 #define PLAY_WHITE 0x1
 #define PLAY_BLACK 0x2
@@ -211,7 +111,7 @@ int show_help() {
   printf("quit   leave the program.\n");
 
   printf("\n");
-  printf("valid moves are in the form e4 Nf3 e7e8 cxd4 Nxd4 and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
+  printf("valid moves are in the form e4 Nf3 cxd4 Nxd4 Bcxd4 [B7xc6 Bb8xc7] and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
 
   return 0;
 
@@ -254,20 +154,54 @@ char *piece_reformulate(char *line, char *extended_description) {
 
 char *exchange_reformulate(char *line, char *extended_description) {
 
+  void uncharacterized_encoding() {
+
+      // Uncharacterized exchange.
+      sprintf(extended_description, "Move was %s.\n", line);
+
+  }
+
   assert(line!=NULL);
 
-  assert((line[0] >= 'a' && line[0] <= 'f') || (strchr(piece_chars, line[0]) != NULL));
+  assert((line[0] >= 'a' && line[0] <= 'h') || (strchr(piece_chars, line[0]) != NULL));
 
-  assert(line[1] == 'x');
-
-  assert(valid_coordinate(line+2));
-
-  if (line[0] >= 'a' && line[0] <= 'f') {
+  if (line[0] >= 'a' && line[0] <= 'h' && line[1] == 'x') {
     sprintf(extended_description, "%c exchange with %s", line[0], line+2);
   }
   else
+
     if (strchr(piece_chars, line[0]) != NULL) {
-      sprintf(extended_description, "%s exchange with %s", piece_name(line[0]), line+2);
+
+      if (line[1] == 'x') {
+	// Nxc3
+	assert(valid_coordinate(line+2));
+	sprintf(extended_description, "%s exchange with %s", piece_name(line[0]), line+2);
+      }
+
+      else
+
+	if (line[2] == 'x') {
+	  // B7xd6 or Bcxd4
+	  assert(valid_coordinate(line+3));
+	  sprintf(extended_description, "%s %c  exchange with %s", piece_name(line[0]), line[1], line+3);
+	}
+      
+	else 
+	  
+	  if (line[3] == 'x') {
+	    // Be4xf5
+	    assert(valid_coordinate(line+4));
+	    sprintf(extended_description, "%s %.2s exchange with %s", piece_name(line[0]), line+1, line+4);
+	  }
+
+	  else uncharacterized_encoding();
+
+    }
+
+    else {
+
+      uncharacterized_encoding();
+
     }
 
   return extended_description;
@@ -324,6 +258,8 @@ int save_pgn(struct move_node *movelist, char *pgn_filename) {
 
   char workstring[20];
 
+  off_t length = 0;
+
   assert(movelist!=NULL);
 
   assert(pgn_filename!=NULL);
@@ -343,18 +279,28 @@ int save_pgn(struct move_node *movelist, char *pgn_filename) {
     if (final->game_status==PLAY_WHITE) {
       sprintf(workstring, "%d. %s", final->move_number, final->move);
       retval = write(fd, workstring, strlen(workstring));
+      if (retval>0) length += retval;
     }
 
     else if (final->game_status==PLAY_BLACK) {
       sprintf(workstring, " %s ", final->move);
       retval = write(fd, workstring, strlen(workstring));
+      if (retval>0) length += retval;
     }
 
     final = final->previous;
 
   }
 
-  write(fd, "\n", 1);
+  retval = write(fd, "\n", 1);
+  if (retval>0) length += retval;
+
+  retval = ftruncate(fd, length);
+  if (retval==-1) {
+    perror("ftruncate");
+    close(fd);
+    return -1;
+  }
 
   retval = close(fd);
   if (retval==-1) {
@@ -373,7 +319,10 @@ int save(struct move_node *movelist) {
 
   char *filename = "output.move_nodes";
 
-  assert(movelist!=NULL);
+  if (movelist==NULL) {
+    printf("%s: Empty move list, not saving.\n", __FUNCTION__);
+    return -1;
+  }
 
   save_pgn(movelist, "output.pgn");
 

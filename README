@@ -43,6 +43,7 @@ mkdir decimate
 cd decimate
 ../configure --prefix=$HOME/bin/chesstalk
 make 
+make check
 make install
 
 

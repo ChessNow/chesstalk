@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src module
+SUBDIRS = src tests module
 
 
 

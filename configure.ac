@@ -60,7 +60,7 @@ AC_CHECK_FUNCS(strtol)
 
 AC_CHECK_FUNCS(getenv)
 
-AC_CONFIG_FILES([src/Makefile Makefile module/Makefile module/ajaxtime/Makefile])
+AC_CONFIG_FILES([src/Makefile Makefile tests/Makefile module/Makefile module/ajaxtime/Makefile])
 
 AC_OUTPUT
 
