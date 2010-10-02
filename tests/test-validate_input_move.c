@@ -33,6 +33,9 @@ int main(int argc, char *argv[]) {
     , { "Bcxd4", .expected_result = OK }
     , { "B7xe6", .expected_result = OK }
     , { "Bd5xe6", .expected_result = OK }    
+    , { "Ncd5", .expected_result = OK }
+    , { "N2e3", .expected_result = OK }
+    , { "Nc8e7", .expected_result = OK }    
   }, *s = ts, *e = s + sizeof(ts) / sizeof(struct test_sample);
 
   int retval;

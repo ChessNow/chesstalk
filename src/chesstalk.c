@@ -111,7 +111,7 @@ int show_help() {
   printf("quit   leave the program.\n");
 
   printf("\n");
-  printf("valid moves are in the form e4 Nf3 cxd4 Nxd4 Bcxd4 [B7xc6 Bb8xc7] and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
+  printf("valid moves are in the form e4 Nf3 [Rab4 R1c7 Na1b3] cxd4 Nxd4 Bcxd4 [B7xc6 Bb8xc7] and use 0-1 or 1-0 to terminate the game. Castle with O-O or O-O-O for king or queen side.\n");
 
   return 0;
 
@@ -138,15 +138,88 @@ char *piece_name(char c) {
 
 char *piece_reformulate(char *line, char *extended_description) {
 
+  int len;
+
+  void uncharacterized_encoding() {
+
+      // Uncharacterized exchange.
+      sprintf(extended_description, "Move was %s.\n", line);
+
+  }
+
   assert(line!=NULL);
 
-  assert(valid_coordinate(line+1));
+  len = strlen(line);
+
+  printf("%s: Using line len=%d\n", __FUNCTION__, len);
 
   if (strchr(piece_chars, line[0]) != NULL) {
 
-    sprintf(extended_description, "%s to %s", piece_name(line[0]), line+1);
+    if (line[1] >= 'a' && line[1] <= 'h') {
+
+	if (len == 4 && valid_coordinate(line+2)) {
+
+	  // Nab2
+
+	  sprintf(extended_description, "%s %c to %s", piece_name(line[0]), line[1], line+2);
+
+	}
+
+      else
+
+	if (valid_coordinate(line+1)) {
+
+	  switch(len) {
+
+	  case 3:
+
+	  // Nc3
+
+	  sprintf(extended_description, "%s to %s", piece_name(line[0]), line+1);
+
+	  break;
+
+	  case 5:
+
+	    if (valid_coordinate(line+3)) {
+
+	    // Na1c2
+
+	    sprintf(extended_description, "%s %.2s to %s", piece_name(line[0]), line+1, line+3);
+
+	    }
+
+	    break;
+
+	  default: uncharacterized_encoding();
+
+	  }
+
+	}
+
+    }
+
+    else
+
+      if (line[1] >= '1' && line[1] <= '8') {
+
+	if (valid_coordinate(line+2)) {
+
+	  assert(len==4);
+
+	  // N2c4
+
+	  sprintf(extended_description, "%s %c to %s", piece_name(line[0]), line[1], line+2);
+
+	}
+
+      }
+
+      else     uncharacterized_encoding();
 
   }
+
+  else uncharacterized_encoding();
 
   return extended_description;
 

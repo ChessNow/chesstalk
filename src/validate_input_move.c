@@ -30,28 +30,80 @@ int validate_input_move(char *str, int verbose) {
 
   else
 
-    if (len==4) {
+    if (len>=4 && len<=6 && strchr(str, 'x') !=NULL) {
 
-      if (str[1] == 'x' && 
-	  ((str[0] >= 'a' && str[0] <= 'h') || (strchr(piece_chars, str[0]) != NULL))) {
+      switch (len) {
 
-	// exchange
+      case 4:
 
-	if (valid_coordinate(str+2)) {
-	  return FALLOUT_EXCHANGE;
+	if (str[1] == 'x' && 
+	    ((str[0] >= 'a' && str[0] <= 'h') || (strchr(piece_chars, str[0]) != NULL))) {
+
+	  // exchange
+
+	  if (valid_coordinate(str+2)) {
+	    return FALLOUT_EXCHANGE;
+	  }
+
 	}
 
-      }
+	break;
 
-    }
+      case 5:
+
+	      if (strchr(piece_chars, str[0]) != NULL) {
+
+		if (str[1] >= 'a' && str[1] <= 'h') {
+
+		  if (str[2] == 'x')
+
+		    if (valid_coordinate(str+3)) return FALLOUT_EXCHANGE;
+
+		}
+
+		if (str[1] >= '1' && str[1] <= '8') {
+
+		  if (str[2] == 'x')
+
+		    if (valid_coordinate(str+3)) return FALLOUT_EXCHANGE;
+
+		}
+
+	      }
+
+	      break;
+
+      case 6:
+
+	      if (strchr(piece_chars, str[0]) != NULL) {
+
+		if (valid_coordinate(str+1)) {
+
+		  if (str[3] == 'x')
+
+		    if (valid_coordinate(str+4)) return FALLOUT_EXCHANGE;
+
+		}
+
+	      }
+
+      }
   
+    }
+
     else
 
-      if (len==3 && strchr(piece_chars, str[0]) != NULL) {
+      if (len>=3 && len<=5 && strchr(piece_chars, str[0]) != NULL) {
 
 	// piece move
 
-	if (valid_coordinate(str+1)) return PIECE_MOVE;
+	if (len==3 && valid_coordinate(str+1)) return PIECE_MOVE;
+
+	if (len==4 && str[1] >= 'a' && str[1] <= 'h' && valid_coordinate(str+2)) return PIECE_MOVE;
+
+	if (len==4 && str[1] >= '1' && str[1] <= '8' && valid_coordinate(str+2)) return PIECE_MOVE;
+
+	if (len==5 && valid_coordinate(str+1) && valid_coordinate(str+3)) return PIECE_MOVE;
 
       }
 
@@ -78,47 +130,6 @@ int validate_input_move(char *str, int verbose) {
 	      
 	  }
 
-	  else 
-
-	    if (len==5) {
-
-	      if (strchr(piece_chars, str[0]) != NULL) {
-
-		if (str[1] >= 'a' && str[1] <= 'h') {
-
-		  if (str[2] == 'x')
-
-		    if (valid_coordinate(str+3)) return FALLOUT_EXCHANGE;
-
-		}
-
-		if (str[1] >= '1' && str[1] <= '8') {
-
-		  if (str[2] == 'x')
-
-		    if (valid_coordinate(str+3)) return FALLOUT_EXCHANGE;
-
-		}
-
-	      }
-
-	    }
-
-	    else if (len==6) {
-
-	      if (strchr(piece_chars, str[0]) != NULL) {
-
-		if (valid_coordinate(str+1)) {
-
-		  if (str[3] == 'x')
-
-		    if (valid_coordinate(str+4)) return FALLOUT_EXCHANGE;
-
-		}
-
-	      }
-
-	    }
 
   return INVALID;
 
