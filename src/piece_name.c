@@ -8,9 +8,11 @@
 
 char *piece_names[] = { "Knight", "Bishop", "King", "Rook", "Queen", "Unknown" };
 
+#include "piece_chars.h"
+
 char *piece_name(char c) {
 
-  char *match_seq = "NBKRQ";
+  char *match_seq = piece_chars;
 
   char *s = match_seq;
 

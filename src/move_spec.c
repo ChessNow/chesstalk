@@ -4,8 +4,6 @@
 
 #include "move_spec.h"
 
-char *piece_chars = "NBRQK";
-
 int valid_coordinate(char *cs) {
 
   assert(cs!=NULL);

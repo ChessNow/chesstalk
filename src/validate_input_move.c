@@ -4,6 +4,8 @@
 
 #include "move_spec.h"
 
+#include "piece_chars.h"
+
 int validate_input_move(char *str, int verbose) {
 
   int len;
