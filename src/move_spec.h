@@ -10,8 +10,6 @@
 #define INVALID 0x40
 #define RESIGN 0x80
 
-extern char *piece_chars;
-
 int valid_coordinate(char *cs);
 
 #endif

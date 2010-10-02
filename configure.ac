@@ -12,9 +12,6 @@ VERSION_EXTRA="darcs"
 CONFIGURE_LINE="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 CODENAME="Manifree"
 
-AC_CANONICAL_BUILD
-AC_CANONICAL_HOST
-
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_HEADERS(config.h)
@@ -35,7 +32,6 @@ AC_CONFIG_SRCDIR([src/chesstalk.c])
 #AC_CHECK_LIB([pthread], [pthread_join])
 #AC_SEARCH_LIBS([dlopen], [dl])
 
-AC_PATH_X
 AC_HEADER_STDC
 
 AC_HEADER_STDBOOL

@@ -6,12 +6,10 @@
 
 #include <errno.h>
 
-// pgn file output module
+// pgn file output
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#include "output_module.h"
 
 #include <dlfcn.h>
 
@@ -88,6 +86,8 @@ int prolog_prep_festival(char *str) {
 #include "validate_input_move.h"
 
 #include "move_spec.h"
+
+#include "piece_chars.h"
 
 #define PLAY_WHITE 0x1
 #define PLAY_BLACK 0x2
@@ -373,14 +373,14 @@ int save_pgn(struct move_node *movelist, char *pgn_filename) {
 
 int save(struct move_node *movelist) {
 
-  char *filename = "output.move_nodes";
+  char *filename = "output.pgn";
 
   if (movelist==NULL) {
     printf("%s: Empty move list, not saving.\n", __FUNCTION__);
     return -1;
   }
 
-  save_pgn(movelist, "output.pgn");
+  save_pgn(movelist, filename);
 
   return 0;
 

@@ -7,6 +7,8 @@ AM_CFLAGS =
 
 bin_PROGRAMS = chesstalk
 
+EXTRA_DIST = ./run-festival-server.h ./run-ajaxtime-module.sh
+
 chesstalk_LDFLAGS = 
 chesstalk_LDADD = -ldl
 chesstalk_CFLAGS = 

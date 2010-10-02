@@ -8,13 +8,13 @@
 
 char *piece_names[] = { "Knight", "Bishop", "King", "Rook", "Queen", "Unknown" };
 
+// must match the sequence set out in piece_chars.c
+
 #include "piece_chars.h"
 
 char *piece_name(char c) {
 
-  char *match_seq = piece_chars;
-
-  char *s = match_seq;
+  char *s = piece_chars;
 
   for ( ; *s; s++) {
 
@@ -22,7 +22,7 @@ char *piece_name(char c) {
 
   }
 
-  return piece_names[s - match_seq]; // Good match, or Unknown
+  return piece_names[s - piece_chars]; // Good match, or Unknown
 
 }
 
