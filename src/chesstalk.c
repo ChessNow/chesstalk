@@ -117,24 +117,7 @@ int show_help() {
 
 }
 
-char *piece_names[] = { "Knight", "Bishop", "King", "Rook", "Queen", "Unknown" };
-
-char *piece_name(char c) {
-
-  char *s;
-
-  switch (c) {
-  case 'N': s=piece_names[0]; break;
-  case 'B': s=piece_names[1]; break;
-  case 'K': s=piece_names[2]; break;
-  case 'R': s=piece_names[3]; break;
-  case 'Q': s=piece_names[4]; break;
-  default: s=piece_names[5]; break;
-  }
-
-  return s;
-
-}
+#include "piece_name.h"
 
 char *piece_reformulate(char *line, char *extended_description) {
 
