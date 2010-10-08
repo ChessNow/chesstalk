@@ -5,4 +5,5 @@
 * 15-Sep-2010 - added ajaxtime module and renamed instructinos for compile directory to decimate due to name conflict with autotools script.
 
 * 28 Sep-2010 - added test harness for validate_input_move, added additional exchange syntax, truncate .pgn file after writing bytes.	
-	
+
+* 08-Oct-2010 - kind of dynamic interval for module ajaxtime and a separate ajaxtime.js file for more easy editting

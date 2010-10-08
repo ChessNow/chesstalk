@@ -5,6 +5,8 @@
 
 <script type="text/javascript" src="../js/jquery.ba-dotimeout.min.js"></script>
 
+<script type="text/javascript" src="./ajaxtime.js"></script>
+
 <!-- // http://benalman.com/projects/jquery-dotimeout-plugin/ -->
 
 <script type="text/javascript">
@@ -17,12 +19,6 @@ var former_white_time = '00:00', former_black_time = '00:00';
 
 var former_last_move = '';
 
-var ideal_interval = 200;
-
-var maximum_interval = 5000;
-
-var interval = ideal_interval;
-
 var json_failure_count = 0;
 
 var upkeep_frames = 2 * (1000 / interval);
@@ -32,6 +28,7 @@ var white_count = upkeep_frames, black_count = upkeep_frames;
 var refreshid;
 
 var elem = $('#polling_loop');
+
 
 function fillout_block(json) {
 
@@ -108,11 +105,20 @@ function activate(id,target) {
 function update_time () {
 
 $.ajax({
-    url: 'ajaxtime.json',
-    type: 'GET',
-    dataType: 'json',
-    timeout: 1000,
-    error: function(){
+    url: 'ajaxtime.json'
+    ,type: 'GET'
+    ,dataType: 'json'
+    ,timeout: 1000
+    ,beforeSend: function (XMLHttpRequest) {
+
+     timeStart = grab_time();
+
+    }  
+    ,error: function(){
+
+     error_timeEnd = grab_time();
+
+     timeAvg = (timeAvg + (error_timeEnd - timeStart)) / 2;
 
      if (interval < max_interval) {
        interval *= 2;
@@ -121,8 +127,13 @@ $.ajax({
        else {
         alert('Error loading XML document ' + json_failure_count);
        }
-    },
-    success: function(json){
+    }
+    ,success: function(json){
+
+     success_timeEnd = grab_time();
+
+     timeAvg = (timeAvg + (success_timeEnd - timeStart)) / 2;
+
         // do something with json
 
 		    if (interval > ideal_interval) {
@@ -137,6 +148,21 @@ $.ajax({
 
 }
 
+function activate_text(item, text) {
+
+   var wcap, workspan, existingchild;
+
+   wcap = document.createTextNode(text);
+
+   workspan = document.getElementById(item);
+
+   existingchild = workspan.firstChild;
+
+   workspan.replaceChild(wcap,existingchild);
+
+
+}
+
 elem.find('a.start').click(function(){
 
    var i = 0;
@@ -145,17 +171,17 @@ elem.find('a.start').click(function(){
 
    ++i;
 
-   var wcap, workspan, existingchild;
+  activate_text("counter", i);
 
-   wcap = document.createTextNode(i);
+  activate_text("failure_count", json_failure_count);
 
-   workspan = document.getElementById("counter");
+  activate_text("timeAvg", timeAvg.toFixed(3) + ' ms');
 
-   existingchild = workspan.firstChild;
-
-   workspan.replaceChild(wcap,existingchild);
+  activate_text("intervals", "interval: " + interval + " ideal_interval: " + ideal_interval);
 
    update_time();
+
+   reoptimize_interval();
 
    return true;
 
@@ -220,6 +246,10 @@ elem.find('a.start').click();
 <p>Polling loop counter: <span id="counter">???</span></p>
 
 <p>json_failure counter: <span id="failure_count">???</span></p>
+
+<p>timeAvg (ping): <span id="timeAvg">???</span></p>
+
+<p>intervals: <span id="intervals">???</span></p>
 
 </div>
 
