@@ -652,7 +652,7 @@ int main(int argc, char *argv[]) {
 
   printf("game_status=%s\n", game_status_str(game_status));
 
-  do {
+  for ( ;; ) {
 
     printf("[%d%s]: ", move_number, game_status==PLAY_WHITE ? "" : "...");
 
@@ -682,6 +682,12 @@ int main(int argc, char *argv[]) {
       valid_move = validate_input_move(line, debug>2);
 
       if (valid_move != INVALID) {
+
+	if (game_status == GAMEOVER) {
+	  
+	  printf("%s: Game is already over. Please save or quit.\n", __FUNCTION__); continue;
+
+	}
 
 	movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
 
@@ -714,7 +720,7 @@ int main(int argc, char *argv[]) {
 
   printf("game_status=%s\n", game_status_str(game_status));
 
-  } while (game_status != GAMEOVER);
+  }
 
   if (modules!=NULL) {
     retval = unload_modules(modules);
