@@ -650,9 +650,9 @@ int main(int argc, char *argv[]) {
 
   block_fest(start_string);
 
-  printf("game_status=%s\n", game_status_str(game_status));
-
   for ( ;; ) {
+
+    printf("game_status=%s\n", game_status_str(game_status));
 
     printf("[%d%s]: ", move_number, game_status==PLAY_WHITE ? "" : "...");
 
@@ -717,8 +717,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
-  printf("game_status=%s\n", game_status_str(game_status));
 
   }
 
