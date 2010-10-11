@@ -644,6 +644,8 @@ int main(int argc, char *argv[]) {
 
   char extended_description[80];
 
+  int valid_move;
+
   env_festival_prolog = getenv("FESTIVAL_PROLOG");
 
   block_fest = env_festival_prolog != NULL ? prolog_prep_festival : regular_festival;
@@ -660,58 +662,52 @@ int main(int argc, char *argv[]) {
 
     if (read_characters == -1) { putchar('\r'); continue; }
 
-    if (line!=NULL && len>0) {
+    if (line==NULL || len<=0) continue;
 
-      int valid_move;
+    if (debug) printf("%s: Got len=%lu for line %s.\n", __FUNCTION__, len, line);
+    { char *p; for (p=line; *p; p++) if (*p == '\n') *p = 0; }
 
-      if (debug) printf("%s: Got len=%lu for line %s.\n", __FUNCTION__, len, line);
-      { char *p; for (p=line; *p; p++) if (*p == '\n') *p = 0; }
+    if (len>=4) {
 
-      if (len>=4) {
+      if (!strncmp(line, "help", 4)) { show_help(); continue; }
+      if (!strncmp(line, "show", 4)) { show_moves(movelist); continue; }
+      if (!strncmp(line, "modules", 7)) { show_modules(modules); continue; }
+      if (!strncmp(line, "save", 4)) { save(movelist); continue; }
+      if (!strncmp(line, "quit", 4)) { break; }
 
-	if (!strncmp(line, "help", 4)) { show_help(); continue; }
-	if (!strncmp(line, "show", 4)) { show_moves(movelist); continue; }
-	if (!strncmp(line, "modules", 7)) { show_modules(modules); continue; }
-	if (!strncmp(line, "save", 4)) { save(movelist); continue; }
-	if (!strncmp(line, "quit", 4)) { break; }
+    }
 
-      }
+    valid_move = validate_input_move(line, debug>2);
 
-      valid_move = validate_input_move(line, debug>2);
+    if (valid_move != INVALID) {
 
-      if (valid_move != INVALID) {
-
-	if (game_status == GAMEOVER) {
+      if (game_status == GAMEOVER) {
 	  
-	  printf("%s: Game is already over. Please save or quit.\n", __FUNCTION__); continue;
-
-	}
-
-	movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
-
-	if (modules!=NULL) { modules_work(modules, move_number, line, game_status & PLAY_WHITE); }
+	printf("%s: Game is already over. Please save or quit.\n", __FUNCTION__); continue;
 
       }
 
-      switch (valid_move) {
-      case INVALID: block_fest(invalid_move); break;
-      case RESIGN: block_fest(game_complete); game_status = GAMEOVER; break;
-      case CASTLE_KS: block_fest("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case CASTLE_QS: block_fest("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case PIECE_MOVE: block_fest(piece_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case COORDINATE_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case FALLOUT_EXCHANGE: block_fest(exchange_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      case PAWN_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-      default: block_fest("What did you say?"); break;
-      }
+      movelist = append_move(movelist, valid_move, game_status, move_number, line, debug>2);
 
-      if (valid_move!=INVALID && valid_move != RESIGN) {
+      if (modules!=NULL) { modules_work(modules, move_number, line, game_status & PLAY_WHITE); }
 
-	if (game_status==PLAY_WHITE) {
-	  move_number++;
-	}
+    }
 
-      }
+    switch (valid_move) {
+    case INVALID: block_fest(invalid_move); break;
+    case RESIGN: block_fest(game_complete); game_status = GAMEOVER; break;
+    case CASTLE_KS: block_fest("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    case CASTLE_QS: block_fest("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    case PIECE_MOVE: block_fest(piece_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    case COORDINATE_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    case FALLOUT_EXCHANGE: block_fest(exchange_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    case PAWN_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
+    default: block_fest("What did you say?"); break;
+    }
+
+    if (valid_move!=INVALID && valid_move != RESIGN) {
+
+      if (game_status==PLAY_WHITE) move_number++;
 
     }
 
