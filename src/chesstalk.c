@@ -660,9 +660,7 @@ int main(int argc, char *argv[]) {
 
     if (read_characters == -1) { putchar('\r'); continue; }
 
-  if (line!=NULL) {
-
-    if (len>0) {
+    if (line!=NULL && len>0) {
 
       int valid_move;
 
@@ -712,11 +710,10 @@ int main(int argc, char *argv[]) {
 	if (game_status==PLAY_WHITE) {
 	  move_number++;
 	}
+
       }
 
     }
-
-  }
 
   }
 
