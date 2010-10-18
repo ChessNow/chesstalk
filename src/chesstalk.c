@@ -13,11 +13,22 @@
 
 #include <dlfcn.h>
 
+#include <unistd.h>
+#include <sys/time.h>
+
+#include <signal.h>
+
 // festival_client --async --ttw --aucommand 'aplay $FILE'
 
-char *basic_command = "festival_client --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 3 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
+char *basic_command = "festival_client --async --ttw --aucommand 'sox $FILE $FILE.sox.wav bass +2 rate 48k gain -3 pad 0 0.5 reverb channels 2 ; aplay --quiet $FILE.sox.wav'";
 
 char *env_festival_prolog;
+
+void catch_epipe(int signal) {
+
+  printf("%s: Got EPIPE. Is the festival server running?\n", __FUNCTION__);
+
+}
 
 int blocking_speak_festival(char *str, char *command) {
 
@@ -30,6 +41,40 @@ int blocking_speak_festival(char *str, char *command) {
   int retval;
 
   int expected_len;
+
+  int out_fd;
+
+  fd_set wfds;
+
+  struct timeval tv;
+
+  int write_leave() {
+
+  expected_len = strlen(str)+1;
+
+  written = fprintf(p, "%s.", str);
+
+  if (written == expected_len) {
+
+    if (fflush(p)) {
+      perror("fflush");
+      fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
+      return -1;
+    }
+
+  }
+
+  else {
+
+    printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
+
+    if (errno==EPIPE) {
+      printf("%s: [WARNING]: Maybe festival server isn't connected?\n", __FUNCTION__);
+    }
+
+  }
+
+  }
 
   assert(str!=NULL && command!=NULL);
 
@@ -57,28 +102,40 @@ int blocking_speak_festival(char *str, char *command) {
 
   }
 
-  expected_len = strlen(str)+1;
+  out_fd = fileno(p);
+  if (out_fd==-1) {
+    printf("%s: Um, probably the festival socket isn't connected. Did you start the server?\n", __FUNCTION__);
+    fflush(stdout);
+    return -1;
+  }
 
-  written = fprintf(p, "%s.", str);
+  retval = fcntl(out_fd, F_SETFL, fcntl(out_fd, F_GETFL, 0) | O_NONBLOCK);
 
-  if (written == expected_len) {
+  FD_ZERO(&wfds);
+  FD_SET(out_fd, &wfds);
 
-    if (fflush(p)) {
-      perror("fflush");
-      fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
-      return -1;
+  tv.tv_sec = 0;
+  tv.tv_usec = 350000;
+
+  retval = select(out_fd+1, NULL, &wfds, NULL, &tv);
+
+  if (retval==-1) {
+    perror("select");
+  }
+
+  else if (retval) {
+
+    if (FD_ISSET(out_fd, &wfds)) {
+
+	write_leave();
+
     }
 
   }
 
   else {
-
-    printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
-
-    if (errno==EPIPE) {
-      printf("%s: [WARNING]: Maybe festival server isn't connected?\n", __FUNCTION__);
-    }
-
+    printf("%s: [WARNING] Select thinks the festival socket isn't connected. Did you start the server?\n", __FUNCTION__);
+    fflush(stdout);
   }
 
   exit_retval = pclose(p);
@@ -677,9 +734,19 @@ int main(int argc, char *argv[]) {
 
   int valid_move;
 
+  struct sigaction sa;
+
   env_festival_prolog = getenv("FESTIVAL_PROLOG");
 
   block_fest = env_festival_prolog != NULL ? prolog_prep_festival : regular_festival;
+
+  memset(&sa, 0, sizeof(struct sigaction));
+  sa.sa_handler = catch_epipe;
+
+  retval = sigaction(SIGPIPE, &sa, NULL);
+  if (retval==-1) {
+    printf("%s: WARNING: Unable to install EPIPE handler. If the festival server isn't running or it flakes out, behavior may be undefined.\n", __FUNCTION__);
+  }
 
   block_fest(start_string);
 
