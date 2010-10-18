@@ -27,27 +27,58 @@ int blocking_speak_festival(char *str, char *command) {
 
   int exit_retval;
 
+  int retval;
+
+  int expected_len;
+
   assert(str!=NULL && command!=NULL);
+
+  // decouple at least the stdout from the current process
+
+  retval =- fflush(stdout);
+  if (retval!=0) {
+    printf("%s: Strange, didn't ask for much.\n", __FUNCTION__);
+    return -1;
+  }
+
+  errno = 0;
 
   p = popen(command, "w");
   if (p==NULL) {
 
-    perror("popen");
+    if (!errno) { printf("%s: Possible memory allocation failure by popen.\n", __FUNCTION__); }
+    else {
+      perror("popen");
+    }
+
     fprintf(stderr, "%s: Trouble with call to popen for command=%s\n", __FUNCTION__, command);
+
     return -1;
 
   }
+
+  expected_len = strlen(str)+1;
 
   written = fprintf(p, "%s.", str);
 
-  if (fflush(p)) {
-    perror("fflush");
-    fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
-    return -1;
+  if (written == expected_len) {
+
+    if (fflush(p)) {
+      perror("fflush");
+      fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
+      return -1;
+    }
+
   }
 
-  if (written != strlen(str)+1) {
-    printf("%s: Wrote %d characters of text. Expected %lu.\n", __FUNCTION__, written, strlen(str)+1);
+  else {
+
+    printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
+
+    if (errno==EPIPE) {
+      printf("%s: [WARNING]: Maybe festival server isn't connected?\n", __FUNCTION__);
+    }
+
   }
 
   exit_retval = pclose(p);
@@ -699,7 +730,6 @@ int main(int argc, char *argv[]) {
     case CASTLE_KS: block_fest("King-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
     case CASTLE_QS: block_fest("Queen-side Castle"); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
     case PIECE_MOVE: block_fest(piece_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
-    case COORDINATE_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
     case FALLOUT_EXCHANGE: block_fest(exchange_reformulate(line, extended_description)); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
     case PAWN_MOVE: block_fest(line); game_status ^= (PLAY_WHITE | PLAY_BLACK); break;
     default: block_fest("What did you say?"); break;
