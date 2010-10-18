@@ -50,29 +50,25 @@ int blocking_speak_festival(char *str, char *command) {
 
   int write_leave() {
 
-  expected_len = strlen(str)+1;
+    expected_len = strlen(str)+1;
 
-  written = fprintf(p, "%s.", str);
+    written = fprintf(p, "%s.", str);
 
-  if (written == expected_len) {
+    if (written == expected_len) {
 
-    if (fflush(p)) {
-      perror("fflush");
-      fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
-      return -1;
+      if (fflush(p)) {
+	perror("fflush");
+	fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
+	return -1;
+      }
+
     }
 
-  }
+    else {
 
-  else {
+      printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
 
-    printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
-
-    if (errno==EPIPE) {
-      printf("%s: [WARNING]: Maybe festival server isn't connected?\n", __FUNCTION__);
     }
-
-  }
 
   }
 
