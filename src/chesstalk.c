@@ -35,7 +35,7 @@ int blocking_speak_festival(char *str, char *command) {
 
   // decouple at least the stdout from the current process
 
-  retval =- fflush(stdout);
+  retval = fflush(stdout);
   if (retval!=0) {
     printf("%s: Strange, didn't ask for much.\n", __FUNCTION__);
     return -1;
