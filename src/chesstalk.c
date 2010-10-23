@@ -114,8 +114,7 @@ int blocking_speak_festival(char *str, char *command) {
   if (out_fd==-1) {
     printf("%s: Um, probably the festival socket isn't connected. Did you start the server?\n", __FUNCTION__);
     fflush(stdout);
-    pclose(p);
-    return -1;
+    goto break_out;
   }
 
   retval = fcntl(out_fd, F_SETFL, fcntl(out_fd, F_GETFL, 0) | O_NONBLOCK);
@@ -132,7 +131,10 @@ int blocking_speak_festival(char *str, char *command) {
   case -1: perror("select"); break;
   case 1: if (FD_ISSET(out_fd, &wfds)) {
       
-      write_leave(p, str, ENSURE_FLUSH);
+      retval = write_leave(p, str, ENSURE_FLUSH);
+      if (retval==-1) {
+	goto break_out;
+      }
 
     }
     break;
@@ -142,14 +144,9 @@ int blocking_speak_festival(char *str, char *command) {
     break;
   }
 
-  exit_retval = pclose(p);
+ break_out:
 
-  if (exit_retval == -1) {
-    perror("pclose");
-    return -1;
-  }
-	 
-  return 0;
+  return pclose(p) == -1 ? perror("pclose"), -1 : 0;
 
 }
 
