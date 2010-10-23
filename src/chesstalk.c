@@ -30,6 +30,40 @@ void catch_epipe(int signal) {
 
 }
 
+#define ENSURE_FLUSH 0x1
+#define ENSURE_BYTES_WRITTEN 0x2
+
+int write_leave(FILE *p, char *str, int fail_states) {
+
+  int expected_len, written;
+
+  assert(p!=NULL && str!=NULL);
+
+  expected_len = strlen(str)+1;
+
+  written = fprintf(p, "%s.", str);
+
+  if (written == expected_len) {
+
+    if (fflush(p)) {
+      perror("fflush");
+      fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
+      if (fail_states&ENSURE_FLUSH) return -1;
+    }
+
+  }
+
+  else {
+
+    printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
+    if (fail_states&ENSURE_BYTES_WRITTEN) return -1;
+
+  }
+
+  return 0;
+
+}
+
 int blocking_speak_festival(char *str, char *command) {
 
   FILE *p;
@@ -48,30 +82,6 @@ int blocking_speak_festival(char *str, char *command) {
 
   struct timeval tv;
 
-  int write_leave() {
-
-    expected_len = strlen(str)+1;
-
-    written = fprintf(p, "%s.", str);
-
-    if (written == expected_len) {
-
-      if (fflush(p)) {
-	perror("fflush");
-	fprintf(stderr, "%s: Trouble with call to fflush.\n", __FUNCTION__);
-	return -1;
-      }
-
-    }
-
-    else {
-
-      printf("%s: Wrote %d characters of text. Expected %d.\n", __FUNCTION__, written, expected_len);
-
-    }
-
-  }
-
   assert(str!=NULL && command!=NULL);
 
   // decouple at least the stdout from the current process
@@ -81,6 +91,8 @@ int blocking_speak_festival(char *str, char *command) {
     printf("%s: Strange, didn't ask for much.\n", __FUNCTION__);
     return -1;
   }
+
+  // emphasis on matching pclose to popen
 
   errno = 0;
 
@@ -102,6 +114,7 @@ int blocking_speak_festival(char *str, char *command) {
   if (out_fd==-1) {
     printf("%s: Um, probably the festival socket isn't connected. Did you start the server?\n", __FUNCTION__);
     fflush(stdout);
+    pclose(p);
     return -1;
   }
 
@@ -115,23 +128,18 @@ int blocking_speak_festival(char *str, char *command) {
 
   retval = select(out_fd+1, NULL, &wfds, NULL, &tv);
 
-  if (retval==-1) {
-    perror("select");
-  }
-
-  else if (retval) {
-
-    if (FD_ISSET(out_fd, &wfds)) {
-
-	write_leave();
+  switch(retval) {
+  case -1: perror("select"); break;
+  case 1: if (FD_ISSET(out_fd, &wfds)) {
+      
+      write_leave(p, str, ENSURE_FLUSH);
 
     }
-
-  }
-
-  else {
+    break;
+  default:
     printf("%s: [WARNING] Select thinks the festival socket isn't connected. Did you start the server?\n", __FUNCTION__);
     fflush(stdout);
+    break;
   }
 
   exit_retval = pclose(p);
