@@ -68,13 +68,7 @@ int blocking_speak_festival(char *str, char *command) {
 
   FILE *p;
 
-  int written;
-
-  int exit_retval;
-
   int retval;
-
-  int expected_len;
 
   int out_fd;
 

@@ -10,6 +10,8 @@ int main(int argc, char *argv[]) {
 
   char *str;
 
+  if (argc>1) printf("%s: argv[0] = %s\n", __FUNCTION__, argv[0]);
+
   str = piece_name('K');
 
   if (strcmp(str, "King")) {

@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   int retval;
 
-  int verbose = 1;
+  int verbose = argc>1 && argv[1];
 
   for ( ; s < e; s++) {
 
