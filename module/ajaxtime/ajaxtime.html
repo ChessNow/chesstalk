@@ -21,6 +21,8 @@ var former_last_move = '';
 
 var json_failure_count = 0;
 
+var scheduled_update_count = 0;
+
 var upkeep_frames = 2 * (1000 / interval);
 
 var white_count = upkeep_frames, black_count = upkeep_frames;
@@ -28,7 +30,6 @@ var white_count = upkeep_frames, black_count = upkeep_frames;
 var refreshid;
 
 var elem = $('#polling_loop');
-
 
 function fillout_block(json) {
 
@@ -113,6 +114,8 @@ $.ajax({
 
      timeStart = grab_time();
 
+   elem.doTimeout('loop');
+
     }  
     ,error: function(){
 
@@ -127,6 +130,9 @@ $.ajax({
        else {
         alert('Error loading XML document ' + json_failure_count);
        }
+
+		    elem.doTimeout('loop', true);
+
     }
     ,success: function(json){
 
@@ -141,6 +147,8 @@ $.ajax({
                      }
 
    fillout_block(json);
+
+   elem.doTimeout('loop', true);
 
    }
 
@@ -163,13 +171,7 @@ function activate_text(item, text) {
 
 }
 
-elem.find('a.start').click(function(){
-
-   var i = 0;
-
-   elem.doTimeout('loop', interval, function() {
-
-   ++i;
+function update_texts(i) {
 
   activate_text("counter", i);
 
@@ -178,6 +180,16 @@ elem.find('a.start').click(function(){
   activate_text("timeAvg", timeAvg.toFixed(3) + ' ms');
 
   activate_text("intervals", "interval: " + interval + " ideal_interval: " + ideal_interval);
+
+}
+
+elem.find('a.start').click(function(){
+
+   elem.doTimeout('loop', interval, function() {
+
+   scheduled_update_count++;
+
+   update_texts(scheduled_update_count);
 
    update_time();
 
